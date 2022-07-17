@@ -1,0 +1,876 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Day 4
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"},
+  {:kino_vega_lite, "~> 0.1.2"},
+  {:explorer, "~> 0.2.0"}
+])
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your bingo")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+[numbers | boards] = input |> Kino.Input.read() |> String.split("\n\n", trim: true)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+["72,86,73,66,37,76,19,40,77,42,48,62,46,3,95,17,97,41,10,14,83,90,12,23,81,98,11,57,13,69,28,63,5,78,79,58,54,67,60,34,39,84,94,29,20,0,24,38,43,51,64,18,27,52,47,74,59,22,85,65,80,2,99,70,33,91,53,93,9,82,8,50,7,56,30,36,89,71,21,49,31,88,26,96,16,1,75,87,6,61,4,68,32,25,55,44,15,45,92,35",
+ "58 60 65  4 91\n73 31 80 83 44\n98 47 33 21 25\n76  6 41 94 50\n55 30 52 11 36",
+ " 8 27 21 18 94\n59  3 47  1 64\n67 16 90 20 83\n26 43 87 82  4\n19 93 89 48 72",
+ "28 31 21 56 35\n63 98 25 65 61\n46 11 91 24 34\n76 22 15  0 87\n83 80 39 12 71",
+ "48  9 95 18 12\n67 20 40 29 51\n 0 85 21 69 89\n71 81 97 64 13\n75 24 65 50 56",
+ " 1 27 24 93 42\n47 71 21 91 88\n39  7 65 64 51\n28 16 15 25 56\n48 23 32 20 22",
+ "26 37 62 13 82\n53 54 16 50 75\n42 18 51 64 60\n25 47 71 38 77\n27 57 29 76 40",
+ "97 20 68 90 70\n42 96 62 49 27\n56 67 12 13 94\n71 35 31 54 17\n73  3  5 23 19",
+ "43 93 19  7 80\n88 37 51 49 58\n29 97 17 94 65\n61 22 75 98 85\n28 73 84 47  1",
+ "96 99 82  7 91\n43 32 48 39 60\n49 51 15 30 11\n16 72 52 69 18\n79 95 41 68 59",
+ "90  3 81 44 99\n 9 40 94 19 37\n41 52 43 83 46\n 2 42 26 24 70\n49 74 34 66 77",
+ "59 83 91 44  0\n62 85 69 18  8\n74  5 94 48 32\n50 46 25  6 96\n87 41 75 22 31",
+ "36 61 69 96 87\n77 60 49 32 45\n92 97 34 21 70\n31 62  6 63  2\n56 93 26 54 85",
+ "30 96 54 85 82\n29 92  1 74 42\n63 26 65 34 98\n87 91  6 53 64\n62 45 13 50 56",
+ " 3 67 61 56 23\n34 48 39 76 37\n44 83 35 72 29\n70 45 55 47  4\n31 92  6 99 59",
+ " 9 42 99 80 14\n81 57 72 63 18\n19 67 25 90 58\n 0  4 51 52 69\n93 60 73 28 23",
+ " 5 27 68 24 35\n69 67 49  1 79\n73 64  4 42 32\n55 74 44 90 45\n92 43 33  2  3",
+ " 7 45 24 51 33\n71 66  6 13 23\n77 55 76 48 44\n39 70 43 36 32\n88  5 69 47 92",
+ "45 40  5 93 80\n64 37 10 35  4\n11  6 75 30 38\n74 44 26 90 99\n 1 81  8 50 32",
+ "92 71 59 47 32\n45 65 68 55 28\n99 88 17 36 82\n16 22 61 48 93\n29  5 69 24 51",
+ "88 85 54 41 92\n10 67 40  4 30\n29 45 32 47 51\n96 81 94 58 34\n39 72  7 46 98",
+ "52 33 11 60 69\n19  9 88 93 75\n82 45 72 48 44\n85 61 87 79 26\n71 80 21  0  3",
+ "60  1 57 93 81\n17 32 61 21  4\n76 24 46 98 33\n 9 84 91  6 23\n 5 59 52 96 54",
+ "22 35 20 41  4\n57  8  9 97 10\n19 25 12 65 53\n 5 50 91 32 23\n58 96 15  7 78",
+ "90 78 31 47 88\n81 56 55 95 10\n60 42 68 34 57\n53 64 85 50 35\n48 16 89 93 77",
+ "64  4  0  7 16\n58 50 37 98 34\n85 71 75 22 57\n81 91  6 86 19\n61 63 95 40  3",
+ "66 88 55  0 32\n68  9 98 73 36\n15 45 39 67  6\n91 11 79 23 84\n12 80 62 14 17",
+ "79 31 43 75 97\n54 78 87 60 99\n41 34 32 61 26\n44 37 20 12 18\n16 73 10 71 22",
+ "92 83 15 36 27\n28 21 35 42 18\n60 87 41 38 95\n45 10 70  5 80\n11 30 56 17 61",
+ "63 25 57 42 14\n24 71  2 11 93\n56 73 16 47 28\n87 64  8 27 83\n21 50 78 48 62",
+ "18 29 90  1 16\n39 72 21 88 55\n19 13 69 83 71\n 7 97 43 58 61\n23 96  9 33 81",
+ "36 13 32  1 11\n57 17 91 76 72\n29 83 35 68 90\n87 12 39 19  0\n99 31 16 25 43",
+ " 5 52 64 73 40\n 0  1 51  3 14\n61 91 55 30 88\n33 83 31 13 71\n24 97 36 19 53",
+ "81 15 67 72 78\n20 21 40 96 37\n13  5 33 83 66\n22 61 91 56 84\n35 86 75 41 46",
+ "28 29 73 84 26\n42 54  3 15 12\n34 16 62 91 30\n53 13  5 46 55\n67 18  1 59 24",
+ "16 39 26 11 67\n36 20 62 27 78\n85 25  9 87 66\n 6 70 60 98 59\n94 46 17 81 10",
+ "35 86 49 59 38\n88 54 68 17 87\n10  9 90 30 62\n82 20 32 77 76\n81 83 79  0 67",
+ "26  9 63 23 45\n22 44 36 60  4\n84 91 54  6 78\n94  2 62 61 31\n52 88 42 21 29",
+ " 1 32 44  0  9\n13 36 26  6 17\n50 74 14 51 88\n25 10 73 43 16\n47 68 34  2 81",
+ "74 67 38 24 32\n46 53 63 18 82\n33 41 48 90  5\n56  3 20 99 17\n96 94 59 21 87",
+ "49 72 39 25 62\n59 99 27 53 98\n33 46 92 38  8\n18 82 90 70 20\n 3  2 54  0 75",
+ "54 34 45  0 19\n95 11 27 62 50\n 3 77 79 17 81\n74 57 40 83 47\n88 72 39 92 16",
+ "65  1 91 71 67\n81 23 34 48 90\n28 92 84 11  3\n 5  8 61 16 76\n83 46 24 55 82",
+ "42 87 55 23 59\n79 54 81 48 95\n61 16 44 13 91\n53 98 72 30 88\n65 69 83 36 64",
+ "45 80 47 27 78\n54 36 16 75  1\n17 26 68 28 39\n43 87 49  0 89\n56 24  7 85 92",
+ "18 50 95 70 49\n44 47 69 92 54\n96 28 79 67 16\n13 31 29 98 14\n53 20  5 66 25",
+ "88 33 27 97 67\n20 69 22 35  0\n50 73 70 52 91\n71 32 48 21 65\n 3  5 15 30 86",
+ "77 85 98  6 11\n15 53 21 89 67\n51 40 62  8 36\n37 69 47 24 29\n39 63 64 72 44",
+ "13  7 80 86 29\n45 91 82 41 42\n69 74 12 68 38\n84 51  6 10 14\n57 26 62 17 24",
+ "31 88 98  2 11\n33 40 23 30 43\n25 16 50 41 22\n12 51 99  6 89\n91 66 90 97 32", ...]
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+rows = Enum.map(boards, &String.split(&1, "\n", trim: true))
+
+cells =
+  Enum.map(
+    rows,
+    &Enum.map(
+      &1,
+      fn x ->
+        String.split(x, "\s", trim: true)
+        |> Enum.map(fn y -> String.to_integer(y) end)
+      end
+    )
+  )
+
+calls = String.split(numbers, ",") |> Enum.map(&String.to_integer/1)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+[72, 86, 73, 66, 37, 76, 19, 40, 77, 42, 48, 62, 46, 3, 95, 17, 97, 41, 10, 14, 83, 90, 12, 23, 81,
+ 98, 11, 57, 13, 69, 28, 63, 5, 78, 79, 58, 54, 67, 60, 34, 39, 84, 94, 29, 20, 0, 24, 38, 43, 51,
+ ...]
+```
+
+```elixir
+defmodule Bingo do
+  def is_loser(board) when is_list(board) do
+    row_loser = Enum.map(board, &Enum.any?(&1)) |> Enum.all?()
+
+    column_loser =
+      for x <- 0..(length(Enum.at(board, 0)) - 1) do
+        Enum.map(board, fn row ->
+          Enum.at(row, x)
+        end)
+        |> Enum.any?()
+      end
+      |> Enum.all?()
+
+    row_loser and column_loser
+  end
+
+  def board_score(board) do
+    Enum.map(board, fn row ->
+      Enum.map(row, fn cell -> if(cell, do: cell, else: 0) end) |> Enum.sum()
+    end)
+    |> Enum.sum()
+  end
+end
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{:module, Bingo, <<70, 79, 82, 49, 0, 0, 11, ...>>, {:board_score, 1}}
+```
+
+## Part 1
+
+```elixir
+{final_number, final_boards} =
+  Enum.reduce_while(calls, cells, fn number, boards ->
+    reduced_boards =
+      Enum.map(boards, fn board ->
+        Enum.map(board, fn row ->
+          Enum.map(row, fn cell ->
+            if(cell == number, do: false, else: cell)
+          end)
+        end)
+      end)
+
+    case Enum.map(reduced_boards, &Bingo.is_loser/1) |> Enum.all?() do
+      true -> {:cont, reduced_boards}
+      false -> {:halt, {number, reduced_boards}}
+    end
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{14,
+ [
+   [
+     [58, 60, 65, 4, 91],
+     [false, 31, 80, 83, 44],
+     [98, 47, 33, 21, 25],
+     [false, 6, false, 94, 50],
+     [55, 30, 52, 11, 36]
+   ],
+   [
+     [8, 27, 21, 18, 94],
+     [59, false, 47, 1, 64],
+     [67, 16, 90, 20, 83],
+     [26, 43, 87, 82, 4],
+     [false, 93, 89, false, false]
+   ],
+   [
+     [28, 31, 21, 56, 35],
+     [63, 98, 25, 65, 61],
+     [false, 11, 91, 24, 34],
+     [false, 22, 15, 0, 87],
+     'SP\'\fG'
+   ],
+   [
+     [false, 9, false, 18, 12],
+     [67, 20, false, 29, 51],
+     [0, 85, 21, 69, 89],
+     [71, 81, false, 64, 13],
+     [75, 24, 65, 50, 56]
+   ],
+   [
+     [1, 27, 24, 93, false],
+     [47, 71, 21, 91, 88],
+     '\'\aA@3',
+     [28, 16, 15, 25, 56],
+     [false, 23, 32, 20, 22]
+   ],
+   [
+     [26, false, false, 13, 82],
+     [53, 54, 16, 50, 75],
+     [false, 18, 51, 64, 60],
+     [25, 47, 71, 38, false],
+     [27, 57, 29, false, false]
+   ],
+   [
+     [false, 20, 68, 90, 70],
+     [false, 96, false, 49, 27],
+     '8C\f\r^',
+     [71, 35, 31, 54, false],
+     [false, false, 5, 23, false]
+   ],
+   [
+     [43, 93, false, 7, 80],
+     [88, false, 51, 49, 58],
+     [29, false, false, 94, 65],
+     [61, 22, 75, 98, 85],
+     [28, false, 84, 47, 1]
+   ],
+   [
+     '`cR\a[',
+     [43, 32, false, 39, 60],
+     [49, 51, 15, 30, 11],
+     [16, false, 52, 69, 18],
+     [79, false, false, 68, 59]
+   ],
+   [
+     [90, false, 81, 44, 99],
+     [9, false, 94, false, false],
+     [false, 52, 43, 83, false],
+     [2, false, 26, 24, 70],
+     [49, 74, 34, false, false]
+   ],
+   [
+     [59, 83, 91, 44, 0],
+     [false, 85, 69, 18, 8],
+     [74, 5, 94, false, 32],
+     [50, false, 25, 6, 96],
+     [87, false, 75, 22, 31]
+   ],
+   [
+     '$=E`W',
+     [false, 60, 49, 32, 45],
+     [92, false, 34, 21, 70],
+     [31, false, 6, 63, 2],
+     [56, 93, 26, 54, 85]
+   ],
+   [
+     [30, 96, 54, 85, 82],
+     [29, 92, 1, 74, false],
+     [63, 26, 65, 34, 98],
+     [87, 91, 6, 53, 64],
+     [false, 45, 13, 50, 56]
+   ],
+   [
+     [false, 67, 61, 56, 23],
+     [34, false, 39, false, false],
+     [44, 83, 35, false, 29],
+     [70, 45, 55, 47, 4],
+     [31, 92, 6, 99, 59]
+   ],
+   [
+     [9, false, 99, 80, false],
+     [81, 57, false, 63, 18],
+     [false, 67, 25, 90, 58],
+     [0, 4, 51, 52, 69],
+     [93, 60, false, 28, 23]
+   ],
+   [
+     [5, 27, 68, 24, 35],
+     [69, 67, 49, 1, 79],
+     [false, 64, 4, false, 32],
+     '7J,Z-',
+     [92, 43, 33, 2, false]
+   ],
+   [
+     [7, 45, 24, 51, 33],
+     [71, false, 6, 13, 23],
+     [false, 55, false, false, 44],
+     '\'F+$ ',
+     [88, 5, 69, 47, 92]
+   ],
+   [
+     [45, false, 5, 93, 80],
+     [64, false, false, 35, 4],
+     [11, 6, 75, 30, 38],
+     [74, 44, 26, 90, 99],
+     [1, 81, 8, 50, 32]
+   ],
+   [
+     '\\G;/ ',
+     [45, 65, 68, 55, 28],
+     [99, 88, false, 36, 82],
+     [16, 22, 61, false, 93],
+     [29, 5, 69, 24, 51]
+   ],
+   [
+     [88, 85, 54, false, 92],
+     [false, 67, false, 4, 30],
+     [29, 45, 32, 47, 51],
+     '`Q^:"',
+     [39, false, 7, false, 98]
+   ],
+   [
+     '4!\v<E',
+     [false, 9, 88, 93, 75],
+     [82, 45, false, false, 44],
+     [85, 61, 87, 79, 26],
+     [71, 80, 21, 0, false]
+   ],
+   [
+     [60, 1, 57, 93, 81],
+     [false, 32, 61, 21, 4],
+     [false, 24, false, 98, 33],
+     [9, 84, 91, 6, 23],
+     [5, 59, 52, 96, 54]
+   ],
+   [
+     [22, 35, 20, false, 4],
+     [57, 8, 9, false, false],
+     [false, 25, 12, 65, 53],
+     [5, 50, 91, 32, 23],
+     [58, 96, 15, 7, 78]
+   ],
+   [
+     [90, 78, 31, 47, 88],
+     [81, 56, 55, false, false],
+     [60, false, 68, 34, 57],
+     '5@U2#',
+     [false, 16, 89, 93, false]
+   ],
+   [
+     [64, 4, 0, 7, 16],
+     [58, 50, false, 98, 34],
+     [85, 71, 75, 22, 57],
+     [81, 91, 6, false, false],
+     [61, 63, false, false, false]
+   ],
+   [
+     [false, 88, 55, 0, 32],
+     [68, 9, 98, false, 36],
+     [15, 45, 39, 67, 6],
+     [91, 11, 79, 23, 84],
+     [12, 80, false, false, false]
+   ],
+   [
+     [79, 31, 43, 75, false],
+     '6NW<c',
+     [false, 34, 32, 61, 26],
+     [44, false, 20, 12, 18],
+     [16, false, false, 71, 22]
+   ],
+   [
+     [92, 83, 15, 36, 27],
+     [28, 21, 35, false, 18],
+     [60, 87, false, 38, false],
+     [45, false, 70, 5, 80],
+     [11, 30, 56, false, 61]
+   ],
+   [
+     [63, 25, 57, false, false],
+     [24, 71, 2, 11, 93],
+     [56, false, 16, 47, 28],
+     'W@\b\eS',
+     [21, 50, 78, false, false]
+   ],
+   [
+     [18, 29, 90, 1, 16],
+     [39, false, 21, 88, 55],
+     [false, 13, 69, 83, 71],
+     [7, false, 43, 58, 61],
+     [23, 96, 9, 33, 81]
+   ],
+   [
+     [36, 13, 32, 1, 11],
+     [57, false, 91, false, false],
+     [29, 83, 35, 68, 90],
+     [87, 12, 39, false, 0],
+     [99, 31, 16, 25, 43]
+   ],
+   [
+     [5, 52, 64, false, false],
+     [0, 1, 51, false, false],
+     [61, 91, 55, 30, 88],
+     [33, 83, 31, 13, 71],
+     [24, false, 36, false, 53]
+   ],
+   [
+     [81, 15, 67, false, 78],
+     [20, 21, false, 96, false],
+     [13, 5, 33, 83, false],
+     [22, 61, 91, 56, 84],
+     [35, false, 75, false, false]
+   ],
+   [
+     [28, 29, false, 84, 26],
+     [false, 54, false, 15, 12],
+     [34, 16, false, 91, 30],
+     [53, 13, 5, false, 55],
+     [67, 18, 1, 59, 24]
+   ],
+   [
+     [16, 39, 26, 11, 67],
+     [36, 20, false, 27, 78],
+     [85, 25, 9, 87, false],
+     [6, 70, 60, 98, 59],
+     [94, false, false, 81, false]
+   ],
+   [
+     [35, false, 49, 59, 38],
+     [88, 54, 68, false, 87],
+     [false, 9, 90, 30, false],
+     [82, 20, 32, false, false],
+     [81, 83, 79, 0, 67]
+   ],
+   [
+     [26, 9, 63, 23, 45],
+     [22, 44, 36, 60, 4],
+     [84, 91, 54, 6, 78],
+     [94, 2, false, 61, 31],
+     [52, 88, false, 21, 29]
+   ],
+   [
+     [1, 32, 44, 0, 9],
+     [13, 36, 26, 6, false],
+     [50, 74, false, 51, 88],
+     [25, false, false, 43, 16],
+     [47, 68, 34, 2, 81]
+   ],
+   [
+     [74, 67, 38, 24, 32],
+     [false, 53, 63, 18, 82],
+     [33, false, false, 90, 5],
+     [56, false, 20, 99, false],
+     [96, 94, 59, 21, ...]
+   ],
+   [
+     [49, false, 39, 25, false],
+     ';c\e5b',
+     [33, false, 92, 38, 8],
+     [18, 82, 90, 70, ...],
+     [false, 2, 54, ...]
+   ],
+   [
+     [54, 34, 45, 0, false],
+     [false, 11, 27, false, 50],
+     [false, false, 79, false, ...],
+     [74, 57, false, ...],
+     [88, false, ...]
+   ],
+   [[65, 1, 91, 71, 67], [81, 23, 34, false, ...], [28, 92, 84, ...], [5, 8, ...], [83, ...]],
+   [[false, 87, 55, 23, ...], [79, 54, 81, ...], [61, 16, ...], [53, ...], 'AES$@'],
+   ['-P/\eN', [54, 36, ...], [false, ...], [...], ...],
+   [[18, 50, ...], ',/E\\6', [...], ...],
+   [[88, ...], [...], ...],
+   [[...], ...],
+   [...],
+   ...
+ ]}
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+winning_board = Enum.find_index(final_boards, &(not Bingo.is_loser(&1)))
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+51
+```
+
+```elixir
+winning_score = Enum.at(final_boards, winning_board) |> Bingo.board_score()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+824
+```
+
+```elixir
+final_number * winning_score
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+11536
+```
+
+## Part 2
+
+```elixir
+{last_number, last_boards} =
+  Enum.reduce_while(calls, cells, fn number, boards ->
+    reduced_boards =
+      Enum.map(boards, fn board ->
+        Enum.map(board, fn row ->
+          Enum.map(row, fn cell ->
+            if(cell == number, do: false, else: cell)
+          end)
+        end)
+      end)
+
+    case Enum.map(reduced_boards, &Bingo.is_loser/1) |> Enum.any?() do
+      true -> {:cont, reduced_boards}
+      false -> {:halt, {number, boards}}
+    end
+  end)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+{6,
+ [
+   [
+     [false, false, false, 4, false],
+     [false, false, false, false, 44],
+     [false, false, false, false, 25],
+     [false, 6, false, false, false],
+     [55, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, 4],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, 35],
+     [false, false, 25, false, 61],
+     [false, false, false, false, false],
+     [false, false, 15, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, 15, 25, false],
+     [false, false, 32, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [25, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, 68, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, 35, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [61, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, 32, false, false, false],
+     [false, false, 15, false, false],
+     [false, false, false, false, false],
+     [false, false, false, 68, false]
+   ],
+   [
+     [false, false, false, 44, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, 44, false],
+     [false, false, false, false, false],
+     [false, false, false, false, 32],
+     [false, false, 25, 6, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, 61, false, false, false],
+     [false, false, false, 32, 45],
+     [92, false, false, false, false],
+     [false, false, 6, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, 92, false, false, false],
+     [false, false, false, false, false],
+     [false, false, 6, false, false],
+     [false, 45, false, false, false]
+   ],
+   [
+     [false, false, 61, false, false],
+     [false, false, false, false, false],
+     [44, false, 35, false, false],
+     [false, 45, 55, false, 4],
+     [false, 92, 6, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, 25, false, false],
+     [false, 4, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, 68, false, 35],
+     [false, false, false, false, false],
+     [false, false, 4, false, 32],
+     [55, false, 44, false, 45],
+     [92, false, false, false, false]
+   ],
+   [
+     [false, 45, false, false, false],
+     [false, false, 6, false, false],
+     [false, 55, false, false, 44],
+     [false, false, false, false, 32],
+     [false, false, false, false, 92]
+   ],
+   [
+     [45, false, false, false, false],
+     [false, false, false, 35, 4],
+     [false, 6, false, false, false],
+     [false, 44, false, false, false],
+     [false, false, false, false, 32]
+   ],
+   [
+     [92, false, false, false, 32],
+     [45, false, 68, 55, false],
+     [false, false, false, false, false],
+     [false, false, 61, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, 92],
+     [false, false, false, 4, false],
+     [false, 45, 32, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, 45, false, false, 44],
+     [false, 61, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, 32, 61, false, 4],
+     [false, false, false, false, false],
+     [false, false, false, 6, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, 35, false, false, 4],
+     [false, false, false, false, false],
+     [false, 25, false, false, false],
+     [false, false, false, 32, false],
+     [false, false, 15, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, 55, false, false],
+     [false, false, 68, false, false],
+     [false, false, false, false, 35],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, 4, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, 6, false, false],
+     [61, false, false, false, false]
+   ],
+   [
+     [false, false, 55, false, 32],
+     [68, false, false, false, false],
+     [15, 45, false, false, 6],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, 32, 61, false],
+     [44, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [92, false, 15, false, false],
+     [false, false, 35, false, false],
+     [false, false, false, false, false],
+     [45, false, false, false, false],
+     [false, false, false, false, 61]
+   ],
+   [
+     [false, 25, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, 55],
+     [false, false, false, false, false],
+     [false, false, false, false, 61],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, 32, false, false],
+     [false, false, false, false, false],
+     [false, false, 35, 68, false],
+     [false, false, false, false, false],
+     [false, false, false, 25, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [61, false, 55, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, 15, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, 61, false, false, false],
+     [35, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, 15, false],
+     [false, false, false, false, false],
+     [false, false, false, false, 55],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, 25, false, false, false],
+     [6, false, false, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [35, false, false, false, false],
+     [false, false, 68, false, false],
+     [false, false, false, false, false],
+     [false, false, 32, false, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, false, false, false, 45],
+     [false, 44, false, false, 4],
+     [false, false, false, 6, false],
+     [false, false, false, 61, false],
+     [false, false, false, false, false]
+   ],
+   [
+     [false, 32, 44, false, false],
+     [false, false, false, 6, false],
+     [false, false, false, false, false],
+     [25, false, false, false, false],
+     [false, 68, false, false, false]
+   ],
+   [
+     [false, false, false, false, 32],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, ...]
+   ],
+   [
+     [false, false, false, 25, false],
+     [false, false, false, false, false],
+     [false, false, 92, false, false],
+     [false, false, false, false, ...],
+     [false, false, false, ...]
+   ],
+   [
+     [false, false, 45, false, false],
+     [false, false, false, false, false],
+     [false, false, false, false, ...],
+     [false, false, false, ...],
+     [false, false, ...]
+   ],
+   [
+     [false, false, false, false, false],
+     [false, false, false, false, ...],
+     [false, 92, false, ...],
+     [false, false, ...],
+     [false, ...]
+   ],
+   [
+     [false, false, 55, false, ...],
+     [false, false, false, ...],
+     [61, false, ...],
+     [false, ...],
+     [...]
+   ],
+   [[45, false, false, ...], [false, false, ...], [false, ...], [...], ...],
+   [[false, false, ...], [44, ...], [...], ...],
+   [[false, ...], [...], ...],
+   [[...], ...],
+   [...],
+   ...
+ ]}
+```
+
+```elixir
+losing_board = Enum.find_index(last_boards, &Bingo.is_loser(&1))
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+87
+```
+
+```elixir
+losing_score = Enum.at(last_boards, losing_board) |> Bingo.board_score()
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+220
+```
+
+```elixir
+last_number
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+6
+```
+
+```elixir
+(losing_score - last_number) * last_number
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+1284
+```

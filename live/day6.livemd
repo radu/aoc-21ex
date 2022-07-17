@@ -1,0 +1,49 @@
+# Day 6
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Please dump your inputs")
+```
+
+## Part 1
+
+```elixir
+fish = Kino.Input.read(input) |> String.split(",", trim: true) |> Enum.map(&String.to_integer/1)
+```
+
+```elixir
+defmodule Lantern do
+  def cycle(fish) do
+    aged =
+      for x <- 1..8 do
+        {x - 1, Map.get(fish, x, 0)}
+      end
+      |> Enum.into(%{})
+
+    Map.update(aged, 6, 0, &(&1 + Map.get(fish, 0, 0)))
+    |> Map.put(8, Map.get(fish, 0, 0))
+  end
+end
+```
+
+```elixir
+fishmap =
+  Enum.reduce(0..7, %{}, fn num, acc ->
+    Map.put(acc, num, Enum.count(fish, &(&1 == num)))
+  end)
+  |> Enum.into(%{})
+```
+
+```elixir
+Enum.reduce(0..256, fishmap, fn x, fish ->
+  IO.puts("Day #{x}, #{Enum.sum(Map.values(fish))} fish")
+  Lantern.cycle(fish)
+end)
+```

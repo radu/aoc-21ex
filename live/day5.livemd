@@ -1,0 +1,88 @@
+# Day 5
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paster your inputr")
+```
+
+```elixir
+board = %{}
+```
+
+```elixir
+sample = """
+0,9 -> 5,9
+8,0 -> 0,8
+9,4 -> 3,4
+2,2 -> 2,1
+7,0 -> 7,4
+6,4 -> 2,0
+0,9 -> 2,9
+3,4 -> 1,4
+0,0 -> 8,8
+5,5 -> 8,2
+"""
+```
+
+## Part 1
+
+```elixir
+board =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn line ->
+    String.split(line, [",", " -> "]) |> Enum.map(&String.to_integer/1) |> List.to_tuple()
+  end)
+  |> Enum.reduce(%{}, fn
+    {x, y1, x, y2}, board ->
+      Enum.reduce(y1..y2, board, fn y, b -> Map.update(b, {x, y}, 1, &(&1 + 1)) end)
+
+    {x1, y, x2, y}, board ->
+      Enum.reduce(x1..x2, board, fn x, b -> Map.update(b, {x, y}, 1, &(&1 + 1)) end)
+
+    _, board ->
+      board
+  end)
+```
+
+```elixir
+Map.values(board) |> Enum.count(&(&1 >= 2))
+```
+
+## Part 2
+
+```elixir
+board =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn line ->
+    String.split(line, [",", " -> "]) |> Enum.map(&String.to_integer/1) |> List.to_tuple()
+  end)
+  |> Enum.reduce(%{}, fn
+    {x, y1, x, y2}, board ->
+      Enum.reduce(y1..y2, board, fn y, b -> Map.update(b, {x, y}, 1, &(&1 + 1)) end)
+
+    {x1, y, x2, y}, board ->
+      Enum.reduce(x1..x2, board, fn x, b -> Map.update(b, {x, y}, 1, &(&1 + 1)) end)
+
+    {x1, y1, x2, y2}, board ->
+      s = Integer.floor_div(y2 - y1, x2 - x1)
+      # IO.inspect("#{i} -> #{x1 + i} , #{x2 + s * i} <- #{x1} #{x2} #{y1} #{y2}") 
+      Enum.reduce(0..(x2 - x1), board, fn i, b ->
+        Map.update(b, {x1 + i, y1 + s * i}, 1, &(&1 + 1))
+      end)
+  end)
+```
+
+```elixir
+Map.values(board) |> Enum.count(&(&1 >= 2))
+```
