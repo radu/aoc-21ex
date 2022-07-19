@@ -1,0 +1,117 @@
+# Day 11
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+```elixir
+octopi =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", strip: true)
+  |> Enum.map(fn x -> x |> to_charlist |> Enum.map(&(&1 - ?0)) end)
+
+octi =
+  for {row, y} <- Enum.with_index(octopi),
+      {cell, x} <- Enum.with_index(row) do
+    {{x, y}, cell}
+  end
+  |> Enum.into(%{})
+
+defmodule Octo do
+  def neighbors({x, y}) do
+    [
+      {x + 1, y},
+      {x + 1, y + 1},
+      {x + 1, y - 1},
+      {x, y + 1},
+      {x, y - 1},
+      {x - 1, y},
+      {x - 1, y + 1},
+      {x - 1, y - 1}
+    ]
+  end
+
+  def flash(map) do
+    newmap = flash(Map.keys(map), map)
+
+    Enum.reduce(newmap, {newmap, 0}, fn
+      {cell, val}, {acc, cnt} when val > 9 ->
+        {Map.put(acc, cell, 0), cnt + 1}
+
+      _, {acc, cnt} ->
+        {acc, cnt}
+    end)
+  end
+
+  def flash([], map), do: map
+
+  def flash([cell | rest], map) do
+    cond do
+      is_nil(map[cell]) ->
+        flash(rest, map)
+
+      cell in rest ->
+        flash(rest, map)
+
+      map[cell] > 9 ->
+        neigh =
+          neighbors(cell)
+          |> Enum.filter(fn x -> not is_nil(map[x]) and map[x] < 10 end)
+
+        flash(
+          Enum.uniq(neigh ++ rest),
+          Enum.reduce(
+            neigh,
+            map,
+            fn cell, acc ->
+              Map.update!(acc, cell, fn x -> x + 1 end)
+            end
+          )
+        )
+
+      true ->
+        flash(rest, map)
+    end
+  end
+
+  def age(map) do
+    Enum.map(map, fn {c, x} -> {c, x + 1} end) |> Enum.into(%{})
+  end
+end
+```
+
+## Part 1
+
+```elixir
+Octo.flash(Octo.age(octi))
+```
+
+```elixir
+size = Enum.count(octi)
+
+Enum.reduce_while(1..1000, {octi, 0}, fn s, {octi, cnt} ->
+  for {row, y} <- Enum.with_index(octopi) do
+    for {_, x} <- Enum.with_index(row) do
+      octi[{x, y}]
+    end
+  end
+  |> IO.inspect(label: s)
+
+  {map, count} = octi |> Octo.age() |> Octo.flash()
+
+  if count == size do
+    {:halt, {s, map, cnt + count}}
+  else
+    {:cont, {map, cnt + count}}
+  end
+end)
+```
