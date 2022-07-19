@@ -1,0 +1,82 @@
+# Day 8
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Dump your digits")
+```
+
+## Part 1
+
+```elixir
+Kino.Input.read(input)
+|> String.split("\n", trim: true)
+|> Enum.map(&String.split(&1, " | "))
+|> IO.inspect()
+|> Enum.map(fn [_, nums] ->
+  String.split(nums, " ") |> Enum.count(fn x -> String.length(x) in [2, 3, 4, 7] end)
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+numbers =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.split(&1, " | "))
+  |> Enum.map(fn [a, b] -> [String.split(a), String.split(b)] end)
+```
+
+```elixir
+[[codes, number] | _] = numbers
+
+for [codes, number] <- numbers do
+  digits = codes |> Enum.group_by(&byte_size/1, &String.to_charlist/1)
+
+  %{
+    2 => [one],
+    3 => [seven],
+    4 => [four],
+    5 => two_three_five,
+    6 => zero_six_nine,
+    7 => [eight]
+  } = digits
+
+  %{true: [nine], false: zero_six} = Enum.group_by(zero_six_nine, &(four -- &1 == []))
+  %{true: three_five, false: [two]} = Enum.group_by(two_three_five, &(&1 -- nine == []))
+  %{true: [three], false: [five]} = Enum.group_by(three_five, &(seven -- &1 == []))
+  %{true: [zero], false: [six]} = Enum.group_by(zero_six, &(seven -- &1 == []))
+
+  eq = fn a, b -> a -- b == [] && b -- a == [] end
+
+  # IO.inspect({one,two,three,four,five,six,seven,eight,nine,zero})
+
+  digit = fn s ->
+    x = to_charlist(s)
+
+    cond do
+      eq.(x, one) -> 1
+      eq.(x, two) -> 2
+      eq.(x, three) -> 3
+      eq.(x, four) -> 4
+      eq.(x, five) -> 5
+      eq.(x, six) -> 6
+      eq.(x, seven) -> 7
+      eq.(x, eight) -> 8
+      eq.(x, nine) -> 9
+      eq.(x, zero) -> 0
+    end
+  end
+
+  number |> Enum.map(digit) |> Integer.undigits()
+end
+|> Enum.sum()
+```

@@ -1,0 +1,79 @@
+# Day 10
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("dieci")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+lines = input |> Kino.Input.read() |> String.split("\n", trim: true) |> Enum.map(&to_charlist/1)
+```
+
+```elixir
+defmodule Chunk do
+  def parse(a), do: parse(a, [])
+
+  def parse([], []), do: nil
+
+  def parse([], b) when is_list(b), do: {:missing, b}
+
+  def parse([x | a], [x | b]), do: parse(a, b)
+
+  def parse([?( | a], b), do: parse(a, [?) | b])
+  def parse([?< | a], b), do: parse(a, [?> | b])
+  def parse([?[ | a], b), do: parse(a, [?] | b])
+  def parse([?{ | a], b), do: parse(a, [?} | b])
+
+  def parse([x | _], _), do: {:wrong, x}
+end
+```
+
+## Part 1
+
+```elixir
+wrong_score = %{
+  ?) => 3,
+  ?] => 57,
+  ?} => 1197,
+  ?> => 25137
+}
+```
+
+```elixir
+Enum.map(lines, &Chunk.parse/1)
+|> Enum.flat_map(fn
+  {:wrong, x} -> [wrong_score[x]]
+  _ -> []
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+miss_score = %{
+  ?) => 1,
+  ?] => 2,
+  ?} => 3,
+  ?> => 4
+}
+```
+
+```elixir
+Enum.map(lines, &Chunk.parse/1)
+|> Enum.flat_map(fn
+  {:missing, x} -> [Enum.reduce(x, 0, &(&2 * 5 + miss_score[&1]))]
+  _ -> []
+end)
+|> Enum.sort()
+|> then(&Enum.at(&1, Integer.floor_div(length(&1), 2)))
+```

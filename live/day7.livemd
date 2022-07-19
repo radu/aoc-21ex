@@ -1,0 +1,78 @@
+# Day 7
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Where da' crabs at: ")
+```
+
+```elixir
+list =
+  Kino.Input.read(input)
+  |> String.trim()
+  |> String.split(",", trim: true)
+  |> Enum.map(&String.to_integer/1)
+```
+
+## Part 1
+
+```elixir
+defmodule Crab do
+  def shift(list, dest) do
+    Enum.map(list, fn x ->
+      abs(x - dest)
+    end)
+  end
+
+  def find_optimum(list, dest) do
+    prev = shift(list, dest - 1) |> Enum.sum()
+    cur = shift(list, dest) |> Enum.sum()
+    next = shift(list, dest + 1) |> Enum.sum()
+
+    if cur <= prev and cur <= next do
+      {dest, cur}
+    else
+      if(next < prev, do: find_optimum(list, dest + 1), else: find_optimum(list, dest - 1))
+    end
+  end
+end
+```
+
+```elixir
+Crab.find_optimum(list, Integer.floor_div(Enum.sum(list), length(list)))
+```
+
+## Part 2
+
+```elixir
+defmodule Crab do
+  def shift(list, dest) do
+    Enum.map(list, fn x ->
+      d = abs(x - dest)
+      Integer.floor_div(d * (d + 1), 2)
+    end)
+  end
+
+  def find_optimum(list, dest) do
+    prev = shift(list, dest - 1) |> Enum.sum()
+    cur = shift(list, dest) |> Enum.sum()
+    next = shift(list, dest + 1) |> Enum.sum()
+
+    if cur <= prev and cur <= next do
+      {dest, cur}
+    else
+      if(next < prev, do: find_optimum(list, dest + 1), else: find_optimum(list, dest - 1))
+    end
+  end
+end
+```
+
+```elixir
+Crab.find_optimum(list, Integer.floor_div(Enum.sum(list), length(list)))
+```

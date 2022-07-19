@@ -1,0 +1,82 @@
+# Day 9
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put:")
+```
+
+```elixir
+map =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn x -> String.to_charlist(x) |> Enum.map(&(&1 - ?0)) end)
+  |> IO.inspect()
+
+m =
+  for {line, l} <- Enum.with_index(map),
+      {val, c} <- Enum.with_index(line) do
+    {{l, c}, val}
+  end
+  |> Enum.into(%{})
+
+low_points =
+  Enum.filter(m, fn {{x, y}, h} ->
+    [{x - 1, y}, {x, y - 1}, {x + 1, y}, {x, y + 1}]
+    |> Enum.all?(fn c ->
+      is_nil(m[c]) or m[c] > h
+    end)
+  end)
+```
+
+## Part 1
+
+```elixir
+Enum.map(
+  low_points,
+  fn {_, v} ->
+    v + 1
+  end
+)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+neighbors = fn {x, y} ->
+  [{x - 1, y}, {x, y - 1}, {x + 1, y}, {x, y + 1}]
+end
+
+grow_basin_rec = fn
+  d, c, rec ->
+    if c in d or m[c] in [9, nil] do
+      d
+    else
+      Enum.reduce(
+        neighbors.(c),
+        [c | d],
+        &rec.(&2, &1, rec)
+      )
+    end
+end
+
+recurse_basin = fn {c, _} -> grow_basin_rec.([], c, grow_basin_rec) end
+
+Enum.map(
+  low_points,
+  recurse_basin
+)
+|> Enum.map(&length/1)
+|> Enum.sort()
+|> Enum.reverse()
+|> Enum.take(3)
+|> Enum.reduce(&(&1 * &2))
+```
