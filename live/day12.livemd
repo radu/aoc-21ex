@@ -1,0 +1,113 @@
+# Day 12
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+map =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", strip: true)
+  |> Enum.map(&(String.split(&1, "-") |> List.to_tuple()))
+
+defmodule Cave do
+  def neighbors(node, map) do
+    Enum.flat_map(map, fn
+      {^node, a} -> [a]
+      {a, ^node} -> [a]
+      {_, _} -> []
+    end)
+  end
+
+  def split(list) do
+    Enum.group_by(list, fn x ->
+      cond do
+        x == "start" -> :start
+        x == "end" -> :end
+        x == String.upcase(x) -> :big
+        x == String.downcase(x) -> :small
+      end
+    end)
+  end
+
+  def can_add?(x, path, maxcnt) do
+    caves = path |> split
+
+    if Map.has_key?(caves, :small) do
+      duplicate = Enum.frequencies([x | caves.small]) |> Enum.filter(&(elem(&1, 1) > 1))
+
+      case duplicate do
+        [] -> true
+        [{_, cnt}] -> cnt <= maxcnt
+        _ -> false
+      end
+    else
+      true
+    end
+  end
+
+  def search(map, maxcnt \\ 1), do: search(map, "start", ["start"], maxcnt)
+
+  def search(map, node, path, maxcnt) do
+    paths = neighbors(node, map) |> split
+
+    small_paths =
+      if Map.has_key?(paths, :small) do
+        Enum.flat_map(
+          paths.small
+          |> Enum.filter(fn x ->
+            can_add?(x, path, maxcnt)
+          end),
+          fn x ->
+            search(map, x, [x | path], maxcnt)
+          end
+        )
+      else
+        []
+      end
+
+    large_paths =
+      if Map.has_key?(paths, :big) do
+        Enum.flat_map(
+          paths.big,
+          fn x ->
+            search(map, x, [x | path], maxcnt)
+          end
+        )
+      else
+        []
+      end
+
+    if Map.has_key?(paths, :end) do
+      Enum.concat([[["end" | path]], small_paths, large_paths])
+    else
+      small_paths ++ large_paths
+    end
+  end
+end
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Cave.search(map) |> IO.inspect() |> Enum.count()
+```
+
+## Part 2
+
+```elixir
+Cave.search(map, 2) |> IO.inspect() |> Enum.count()
+```

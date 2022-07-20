@@ -1,0 +1,107 @@
+# Day 13
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+```elixir
+[points, instructions] =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n\n", trim: true)
+
+folds =
+  instructions
+  |> String.split("\n", trim: true)
+  |> Enum.map(&(String.slice(&1, 11..-1) |> String.split("=")))
+  |> Enum.map(fn [a, b] -> {String.to_atom(a), String.to_integer(b)} end)
+
+coords =
+  points
+  |> String.split("\n")
+  |> Enum.map(fn x ->
+    [x, y] = String.split(x, ",", trim: true)
+    {String.to_integer(x), String.to_integer(y)}
+  end)
+```
+
+```elixir
+defmodule Paper do
+  def fold(paper, {:x, loc}) do
+    Enum.map(paper, fn
+      {x, y} when x > loc ->
+        {2 * loc - x, y}
+
+      {x, y} ->
+        {x, y}
+    end)
+    |> Enum.uniq()
+  end
+
+  def fold(paper, {:y, loc}) do
+    Enum.map(paper, fn
+      {x, y} when y > loc ->
+        {x, 2 * loc - y}
+
+      {x, y} ->
+        {x, y}
+    end)
+    |> Enum.uniq()
+  end
+
+  def print(paper, fold \\ %{}) do
+    IO.puts("============")
+    xs = paper |> Enum.map(&elem(&1, 0))
+    ys = paper |> Enum.map(&elem(&1, 1))
+
+    for y <- 0..Enum.max(ys) do
+      [
+        Integer.to_charlist(y),
+        ' '
+        | for x <- 0..Enum.max(xs) do
+            cond do
+              fold[:y] == y -> '--'
+              fold[:x] == x -> '||'
+              {x, y} in paper -> '##'
+              true -> '  '
+            end
+          end
+      ]
+      |> Enum.concat()
+      |> IO.puts()
+    end
+
+    IO.puts("============")
+  end
+end
+```
+
+## Part 1
+
+```elixir
+[first | rest] = folds
+
+fold = IO.inspect([first] |> Enum.into(%{}))
+IO.inspect(fold[:x])
+
+coords |> Paper.fold(first) |> Enum.count()
+
+fold[:x] == 655
+```
+
+## Part 2
+
+```elixir
+Enum.reduce(folds, coords, fn fold, acc ->
+  Paper.fold(acc, fold) |> tap(&Paper.print(&1, [fold] |> Enum.into(%{})))
+end)
+|> Paper.print()
+```

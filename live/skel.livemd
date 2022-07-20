@@ -1,0 +1,33 @@
+# Day 1X
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+```elixir
+data =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", strip: true)
+  |> Enum.map(fn x -> x |> to_charlist |> Enum.map(&(&1 - ?0)) end)
+```
+
+## Part 1
+
+```elixir
+
+```
+
+## Part 2
+
+```elixir
+
+```
