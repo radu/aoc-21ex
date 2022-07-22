@@ -1,0 +1,129 @@
+# Day 15
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+grid =
+  for {line, row} <-
+        input |> Kino.Input.read() |> String.split("\n", strip: true) |> Enum.with_index(),
+      {val, col} <- String.to_charlist(line) |> Enum.with_index(),
+      into: %{} do
+    {{row, col}, val - ?0}
+  end
+```
+
+```elixir
+defmodule PQ do
+  def new() do
+    []
+  end
+
+  def add([{cur_weight, _} | _] = list, value, weight)
+      when weight <= cur_weight,
+      do: [{weight, value} | list]
+
+  def add([head | tail], value, weight),
+    do: [head | add(tail, value, weight)]
+
+  def add([], value, weight),
+    do: [{weight, value}]
+end
+
+defmodule Lab do
+  def in_grid({x, y}, {maxx, maxy}, n),
+    do:
+      x < n * (maxx + 1) and x >= 0 and
+        y < n * (maxy + 1) and y >= 0
+
+  def score_at(map, {x, y}, {maxx, maxy}) do
+    nx = rem(x, maxx + 1)
+    ny = rem(y, maxy + 1)
+
+    rem(
+      Map.get(map, {nx, ny}) - 1 + Integer.floor_div(x, maxx + 1) +
+        Integer.floor_div(y, maxy + 1),
+      9
+    ) + 1
+  end
+
+  def neighbors({x, y}, n, {maxx, maxy}) do
+    [{1, 0}, {0, 1}, {0, -1}, {-1, 0}]
+    |> Enum.map(fn {dx, dy} ->
+      x = x + dx
+      y = y + dy
+
+      if(in_grid({x, y}, {maxx, maxy}, n),
+        do: {x, y},
+        else: nil
+      )
+    end)
+    |> Enum.filter(& &1)
+  end
+
+  def search(map, n) do
+    distances = %{{0, 0} => 0}
+    queue = PQ.add(PQ.new(), {0, 0}, 0)
+    {maxx, maxy} = Map.keys(map) |> Enum.max() |> IO.inspect(label: "maxx, maxy")
+
+    {targx, targy} = {n * (maxx + 1) - 1, n * (maxy + 1) - 1} |> IO.inspect(label: "target")
+    search(map, distances, queue, {targx, targy}, n, {maxx, maxy})
+  end
+
+  def search(
+        map,
+        distances,
+        queue,
+        goal,
+        n,
+        {maxx, maxy}
+      ) do
+    [{_, u} | queue] = queue
+
+    if u == goal do
+      {:found, u, Map.get(distances, u)}
+    else
+      {distances, queue} =
+        for v <- neighbors(u, n, {maxx, maxy}),
+            in_grid(v, {maxx, maxy}, n),
+            dist_from_source = distances[u] + score_at(map, v, {maxx, maxy}),
+            dist_from_source < Map.get(distances, v, :infinity),
+            reduce: {distances, queue} do
+          {distances, queue} ->
+            distances = Map.put(distances, v, dist_from_source)
+            queue = PQ.add(queue, v, dist_from_source)
+            {distances, queue}
+        end
+
+      search(map, distances, queue, goal, n, {maxx, maxy})
+    end
+  end
+end
+```
+
+```elixir
+Lab.score_at(grid, {9, 8}, {9, 9})
+```
+
+## Part 1
+
+```elixir
+Lab.search(grid, 1)
+```
+
+## Part 2
+
+```elixir
+Lab.search(grid, 5)
+```
