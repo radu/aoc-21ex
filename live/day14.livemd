@@ -1,0 +1,94 @@
+# Day 14
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+```elixir
+[polymer, table] =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n\n", trim: true)
+
+template = polymer |> to_charlist |> Enum.chunk_every(2, 1, [0])
+
+pairs =
+  table
+  |> String.split("\n")
+  |> Map.new(fn <<a, b, " -> ", c>> -> {[a, b], c} end)
+```
+
+```elixir
+defmodule Chem do
+  def polymerize(map, pol, n) do
+    Enum.reduce(1..n, pol, fn _, pol ->
+      Enum.flat_map(pol, fn
+        [a, b] = pair ->
+          case map do
+            %{^pair => [o]} -> [[a, o], [o, b]]
+            %{} -> [pair]
+          end
+
+        c ->
+          [c]
+      end)
+    end)
+  end
+end
+```
+
+## Part 1
+
+```elixir
+freqs =
+  pairs
+  |> Chem.polymerize(template, 10)
+  |> Enum.map(&hd/1)
+  |> IO.inspect()
+  |> tap(&IO.inspect(length(&1)))
+  |> Enum.frequencies()
+  |> Enum.map(fn {k, v} -> {[k], v} end)
+  |> Enum.into(%{})
+  |> IO.inspect()
+  |> Map.values()
+
+Enum.max(freqs) - Enum.min(freqs)
+```
+
+## Part 2
+
+```elixir
+template = Enum.frequencies(template)
+```
+
+```elixir
+{{_, mins}, {_, maxes}} =
+  1..40
+  |> Enum.reduce(template, fn n, template ->
+    IO.inspect(n)
+
+    Enum.reduce(template, %{}, fn {[a, b] = tok, cnt}, acc ->
+      case pairs do
+        %{^tok => o} ->
+          acc
+          |> Map.update([a, o], cnt, &(&1 + cnt))
+          |> Map.update([o, b], cnt, &(&1 + cnt))
+
+        %{} ->
+          Map.put(acc, tok, cnt)
+      end
+    end)
+  end)
+  |> Enum.group_by(&hd(elem(&1, 0)), &elem(&1, 1))
+  |> Enum.min_max_by(fn {_, counts} -> Enum.sum(counts) end)
+
+Enum.sum(maxes) - Enum.sum(mins)
+```
