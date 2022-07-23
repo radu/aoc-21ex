@@ -1,0 +1,100 @@
+# Day 17
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"},
+  {:vega_lite, "~> 0.1.5"}
+])
+```
+
+## Input
+
+```elixir
+[_, ranges] = "target area: x=79..137, y=-176..-117" |> String.split(": ", trim: true)
+["x", xmin, xmax, "y", ymin, ymax] = String.split(ranges, [", ", "=", ".."])
+
+[xmin, xmax, ymin, ymax] = [xmin, xmax, ymin, ymax] |> Enum.map(&String.to_integer(&1))
+
+range = {xmin, xmax, ymin, ymax}
+
+print_target = fn {xmin, xmax, ymin, ymax}, locations ->
+  {dxmin, dxmax, dymin, dymax} = {min(xmin, 0), max(xmax, 0), min(ymin, 0), max(ymax, 0)}
+
+  {dxmin, dxmax, dymin, dymax} =
+    {
+      min(dxmin, locations |> Enum.map(&elem(&1, 0)) |> Enum.min()),
+      max(dxmax, locations |> Enum.map(&elem(&1, 0)) |> Enum.max()),
+      min(dymin, locations |> Enum.map(&elem(&1, 1)) |> Enum.min()),
+      max(dymax, locations |> Enum.map(&elem(&1, 1)) |> Enum.max())
+    }
+    |> IO.inspect()
+
+  for y <- dymax..dymin do
+    for x <- dxmin..dxmax do
+      cond do
+        {x, y} == {0, 0} ->
+          'S'
+
+        {x, y} in locations ->
+          '*'
+
+        x >= xmin and x <= xmax and y >= ymin and y <= ymax ->
+          'T'
+
+        true ->
+          '.'
+      end
+    end
+    |> Enum.concat()
+    |> IO.puts()
+  end
+end
+```
+
+## Part 1
+
+```elixir
+path = fn {vx, vy}, {x, y} = pos, f ->
+  if x <= xmax and y >= ymin do
+    x = x + vx
+    y = y + vy
+
+    vx = if(vx == 0, do: 0, else: (abs(vx) - 1) * Integer.floor_div(vx, abs(vx)))
+    vy = vy - 1
+    [pos | f.({vx, vy}, {x, y}, f)]
+  else
+    []
+  end
+end
+
+vxopt = round(:math.sqrt(xmin + 1) + 1)
+vyopt = -ymin - 1
+
+# print_target.(range, path.({vxopt, vyopt}, {0, 0}, path) |> IO.inspect())
+
+hits = fn {xmin, xmax, ymin, ymax}, path ->
+  for {x, y} <- path do
+    x >= xmin and x <= xmax and y >= ymin and y <= ymax
+  end
+  |> Enum.any?()
+end
+
+ymax = round(vyopt * (vyopt + 1) / 2)
+```
+
+## Part 2
+
+```elixir
+vxmin = round(:math.sqrt(xmin + 1) + 1)
+vxmax = xmax
+
+vymin = ymin
+vymax = -ymin - 1
+
+for vx <- vxmin..vxmax,
+    vy <- vymin..vymax do
+  hits.(range, path.({vx, vy}, {0, 0}, path))
+end
+|> Enum.filter(& &1)
+|> Enum.count()
+```

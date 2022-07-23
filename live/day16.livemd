@@ -1,0 +1,107 @@
+# Day 16
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.6.2"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("In put here:")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+data =
+  input
+  |> Kino.Input.read()
+  |> Base.decode16!()
+```
+
+```elixir
+defmodule Bits do
+  def apply_operation(op, data) do
+    IO.puts("Performing op #{op} on #{inspect(data)}")
+
+    case op do
+      0 -> Enum.sum(data)
+      1 -> Enum.product(data)
+      2 -> Enum.min(data)
+      3 -> Enum.max(data)
+      5 -> if(Enum.at(data, 0) > Enum.at(data, 1), do: 1, else: 0)
+      6 -> if(Enum.at(data, 0) < Enum.at(data, 1), do: 1, else: 0)
+      7 -> if(Enum.at(data, 0) == Enum.at(data, 1), do: 1, else: 0)
+      _ -> :error
+    end
+  end
+
+  def parse(<<version::3, id::3, payload::bits>>) when id == 4 do
+    IO.puts("Parsing literal ver #{version}")
+
+    with {data, rest} <- parse_payload(payload) do
+      size = bit_size(data)
+      <<val::integer-unsigned-size(size)>> = data
+      IO.puts("Value: #{inspect(val)} ")
+      {[val], version, rest}
+    end
+  end
+
+  def parse(<<version::3, id::3, 1::1, num::11, rest::bits>>) do
+    IO.puts("Ver #{version},  id #{id}, length #{num} packes ")
+
+    {data, ver, rem} =
+      for _i <- 1..num,
+          reduce: {[], version, rest} do
+        {data, vsum, rest} ->
+          # IO.puts("#{i} / #{num}, rest: #{inspect(rest)}")
+          {c, ver, rem} = parse(rest)
+          {data ++ c, ver + vsum, rem}
+      end
+
+    {[apply_operation(id, data)], ver, rem}
+  end
+
+  def parse(<<version::3, id::3, 0::1, length::15, rest::bits>>) do
+    IO.puts("Ver #{version},  id #{id}, length #{length} bits ")
+
+    <<payload::size(length), unparsed::bits>> = rest
+
+    {data, ver, <<>>} = parse_sequence(<<payload::size(length)>>)
+
+    {[apply_operation(id, data)], version + ver, unparsed}
+  end
+
+  def parse_sequence(data) do
+    {data, ver, remaining} = parse(data)
+
+    case remaining do
+      <<>> ->
+        {data, ver, <<>>}
+
+      _ ->
+        {rest_data, rest_ver, rest_rem} = parse_sequence(remaining)
+        {data ++ rest_data, ver + rest_ver, rest_rem}
+    end
+  end
+
+  def parse_payload(<<1::1, bits::4, rest::bits>>) do
+    with {rest_parsed, rest_unparsed} = parse_payload(rest) do
+      # |> IO.inspect(label: "literal")
+      {<<bits::4, rest_parsed::bits>>, rest_unparsed}
+    end
+  end
+
+  def parse_payload(<<0::1, bits::4, rest::bits>>), do: {<<bits::4>>, rest}
+end
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Bits.parse(data)
+```
